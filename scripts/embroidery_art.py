@@ -3,7 +3,7 @@ Procedural embroidery artwork: Sisyphus pushing the stone up (left back side)
 and the stone rolling down (right back side). A mountain peak sits on the
 center back seam.
 
-Canvas is 2 x 1.5 design units (W x H). x=0 is the wearer's LEFT side when
+Canvas is 2 x CANVAS_H design units (W x H). x=0 is the wearer's LEFT side when
 seen from behind (viewer's left), x=2 is the wearer's right.
 
 Run standalone inside Blender to regenerate the PNG:
@@ -20,12 +20,14 @@ STONE = (0.62, 0.60, 0.56)
 STONE_DARK = (0.38, 0.36, 0.33)
 
 # ---- composition parameters ----
-CANVAS_H = 1.5        # canvas is 2 x CANVAS_H design units
-GROUND_Y0 = 0.10      # ridge height at the outer edges
-EDGE_X = 0.04         # ridge starts/ends this far from the canvas sides
-PEAK = (1.0, 1.30)    # mountain peak on the center seam
+CANVAS_H = 1.0        # canvas is 2 x CANVAS_H design units
+GROUND_Y0 = 0.12      # ridge height at the outer edges
+EDGE_X = 0.02         # ridge starts/ends this far from the canvas sides
+PEAK = (1.0, 0.72)    # mountain peak on the center seam
 STONE_R = 0.12
-FIGURE_SCALE = 1.5    # size of Sisyphus + stones relative to the original sketch
+FIGURE_SCALE = 1.0    # size of Sisyphus + stones relative to the original sketch
+LEFT_FOOT_ALONG = 0.42   # Sisyphus' back foot: distance up the left slope
+RIGHT_STONE_ALONG = 0.55  # rolling stone: distance down the right slope from the peak
 
 # the figures were drawn on a 31 deg slope; they get rotated onto the real one
 _SKETCH_K = 0.61
@@ -39,7 +41,7 @@ def _grid(w, h):
 
 
 class Canvas:
-    def __init__(self, w=2048, h=1536):
+    def __init__(self, w=2048, h=1024):
         self.w, self.h = w, h
         self.X, self.Y = _grid(w, h)
         self.px = 2.0 / w
@@ -139,7 +141,7 @@ def draw_ridge(cv):
 def draw_sisyphus_pushing(cv):
     """Left side: figure leaning into the stone, pushing it uphill (to the right)."""
     back_foot_sketch = (0.38, ground_left(0.38))
-    cv.set_transform(back_foot_sketch, along_slope((EDGE_X, GROUND_Y0), 0.30, False),
+    cv.set_transform(back_foot_sketch, along_slope((EDGE_X, GROUND_Y0), LEFT_FOOT_ALONG, False),
                      SLOPE_DELTA, FIGURE_SCALE)
     k = _SKETCH_K
     n = np.array([-k, 1.0]) / np.hypot(k, 1.0)        # slope normal
@@ -173,7 +175,7 @@ def draw_stone_rolling(cv):
     t = np.array([1.0, -k]) / np.hypot(1.0, k)          # downhill tangent
     n = np.array([k, 1.0]) / np.hypot(1.0, k)           # slope normal
     contact_x = 1.55
-    cv.set_transform((contact_x, ground_right(contact_x)), along_slope(PEAK, 0.95, True),
+    cv.set_transform((contact_x, ground_right(contact_x)), along_slope(PEAK, RIGHT_STONE_ALONG, True),
                      -SLOPE_DELTA, FIGURE_SCALE)
     sc = np.array([contact_x, ground_right(contact_x)]) + n * (STONE_R + 0.035)
 
@@ -199,7 +201,7 @@ def draw_stone_rolling(cv):
     cv.paint(cv.seg(tuple(tip), (tip[0] - 0.012, tip[1] + 0.03), 0.005), ORANGE)
 
 
-def build(w=2048, h=1536):
+def build(w=2048, h=1024):
     cv = Canvas(w, h)
     draw_ridge(cv)
     draw_stone_rolling(cv)
@@ -207,7 +209,7 @@ def build(w=2048, h=1536):
     return cv.rgba
 
 
-def save_png(path, w=2048, h=1536):
+def save_png(path, w=2048, h=1024):
     import bpy
     rgba = build(w, h)
     name = os.path.basename(path)
